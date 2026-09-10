@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Bantu Hewan Pulang! - Gim Edukasi Habitat Hewan TK A</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Fredoka', cursive, sans-serif;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            background: linear-gradient(135deg, #fef3c7 0%, #e0f2fe 50%, #dcfce7 100%);
+        }
+        .drop-zone {
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+            background-size: cover;
+            background-position: center;
+        }
+        .drop-zone.highlight {
+            transform: scale(1.04);
+            box-shadow: 0 0 25px rgba(245, 158, 11, 0.7);
+            border-color: #f59e0b !important;
+        }
+        .draggable-item {
+            cursor: grab;
+            touch-action: none;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .draggable-item:active, .draggable-item.dragging {
+            cursor: grabbing;
+            transform: scale(1.15);
+            z-index: 1000;
+        }
+        @keyframes wrongShake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-14px); }
+            40%, 80% { transform: translateX(14px); }
+        }
+        .animate-shake {
+            animation: wrongShake 0.4s ease-in-out;
+        }
+        @keyframes bounceCorrect {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.3) rotate(8deg); }
+        }
+        .animate-correct {
+            animation: bounceCorrect 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body class="min-h-screen w-screen flex flex-col justify-between p-3 md:p-6 overflow-hidden">
+
+    <!-- Audio Control Toggle (Floating) -->
+    <div class="fixed top-3 right-3 z-50 flex items-center space-x-2 bg-white/90 backdrop-blur px-3 py-1.5 rounded-full shadow border border-amber-300">
+        <span class="text-xs font-bold text-amber-900"> suara AI:</span>
+        <button id="toggle-voice-btn" class="w-7 h-7 flex items-center justify-center bg-emerald-500 text-white rounded-full text-xs shadow hover:bg-emerald-600 transition">🔊</button>
+    </div>
+ 
+    <!-- ================= 1. HALAMAN LOADING ================= -->
+    <div id="loading-screen" class="fixed inset-0 z-50 bg-amber-100 flex flex-col items-center justify-center p-4">
+        <div class="flex space-x-3 text-5xl md:text-6xl mb-6">
+            <span class="animate-bounce" style="animation-delay: 0s;">🦅</span>
+            <span class="animate-bounce" style="animation-delay: 0.15s;">🐘</span>
+            <span class="animate-bounce" style="animation-delay: 0.3s;">🐬</span>
+        </div>
+        <h2 class="text-2xl md:text-3xl font-bold text-amber-900 mb-3 text-center">Menyiapkan Petualangan Hutan...</h2>
+        <div class="w-64 bg-amber-200 h-4 rounded-full overflow-hidden border-2 border-amber-400">
+            <div id="loading-bar" class="bg-amber-500 h-full w-0 transition-all duration-300"></div>
+        </div>
+        <p class="text-xs text-amber-700 font-semibold mt-3">Gim Edukasi TK A • Bu Sekar</p>
+    </div>
+ 
+    <!-- ================= 2. HALAMAN BERANDA ================= -->
+    <div id="home-screen" class="hidden fixed inset-0 z-40 bg-gradient-to-br from-amber-100 via-sky-100 to-emerald-100 flex flex-col items-center justify-between p-6 overflow-y-auto">
+        <header class="text-center mt-2">
+            <div class="inline-block bg-white/80 backdrop-blur px-6 py-2 rounded-full border-2 border-amber-300 text-amber-800 font-bold text-xs md:text-sm shadow-sm mb-2">
+                 🏫 TK Miryam • Kelas TK A
+            </div>
+            <h1 class="text-3xl md:text-5xl font-bold text-amber-900 leading-tight">🐾 Bantu Hewan Pulang!</h1>
+            <p class="text-sm md:text-lg text-amber-700 mt-1 font-medium">Petualangan Mengenal Habitat Hewan</p>
+        </header>
+ 
+        <main class="my-auto flex flex-col items-center text-center max-w-md w-full my-4">
+            <div class="bg-white/90 backdrop-blur-md rounded-3xl p-5 md:p-6 border-4 border-amber-300 shadow-xl w-full flex flex-col items-center">
+                 
+                <!-- Gambar Sampul Halaman Utama -->
+                <div class="w-full mb-4 overflow-hidden rounded-2xl border-2 border-amber-300 shadow-md">
+                    <img src="https://i.ibb.co.com/x8mB279t/bantu-hewan-pulang-ukuran-kecil.jpg" alt="Bantu Hewan Pulang" class="w-full h-44 md:h-52 object-cover" onerror="this.src='https://placehold.co/400x200/fef3c7/b45309?text=Bantu+Hewan+Pulang'">
+                </div>
+ 
+                <h2 class="text-xl font-bold text-amber-950 mb-2">Halo Penjelajah Cilik! 👋</h2>
+                <p class="text-sm md:text-base text-gray-700 leading-relaxed mb-5">
+                    Ada <b>15 hewan</b> yang tersesat di hutan. Bisakah kamu membantu mereka menemukan jalan pulang ke <b>Darat</b>, <b>Air</b>, atau <b>Udara</b>?
+                </p>
+                <button id="start-game-btn" class="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xl md:text-2xl rounded-2xl shadow-lg border-b-4 border-emerald-700 transition transform active:scale-95">
+                    🚀 Mulai Bermain
+                </button>
+            </div>
+        </main>
+ 
+        <footer class="text-center text-xs text-amber-800 font-medium mb-2">
+            Disusun oleh Ibu Sekar Arum Cahyaning P., S.Psi
+        </footer>
+    </div>
+ 
+    <!-- ================= 3. PAPAN PERMAINAN ================= -->
+    <div id="game-screen" class="hidden flex-1 flex flex-col justify-between w-full max-w-4xl mx-auto">
+        
+        <!-- Header Papan Permainan -->
+        <header class="w-full flex justify-between items-center bg-white/90 backdrop-blur-md px-4 py-2.5 rounded-3xl shadow-md border-4 border-amber-300">
+            <button id="back-home-btn" class="bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold px-3 py-1.5 rounded-2xl text-xs md:text-sm border border-amber-300 transition">
+                🏠 Beranda
+            </button>
+            
+            <div class="flex items-center space-x-2">
+                <span class="text-xl md:text-2xl">⭐</span>
+                <span id="scoreText" class="text-lg md:text-xl font-bold text-amber-950">0 / 15</span>
+            </div>
+ 
+            <button id="reset-btn" class="bg-amber-300 hover:bg-amber-400 text-amber-950 font-bold px-3 py-1.5 rounded-2xl text-xs md:text-sm shadow-sm transition">
+                🔄 Ulangi
+            </button>
+        </header>
+ 
+        <!-- Area Habitat (Drop Zones) -->
+        <main class="my-auto py-3">
+            <div class="grid grid-cols-3 gap-2 md:gap-4 h-56 md:h-64">
+                 
+                <!-- Habitat Udara -->
+                <div id="zone-udara" data-habitat="udara" 
+                     class="drop-zone border-4 border-sky-400 rounded-3xl p-2.5 flex flex-col items-center justify-between shadow-inner relative overflow-hidden"
+                     style="background-image: linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.2)), url('https://i.ibb.co.com/ZRHrDB2N/bg-langit.jpg');">
+                    <div class="z-10 text-center bg-white/80 backdrop-blur-sm px-2 py-1 rounded-xl">
+                        <span class="text-2xl md:text-4xl block">☁️</span>
+                        <span class="text-xs md:text-sm font-bold text-sky-900">UDARA (0/5)</span>
+                    </div>
+                    <div id="slot-udara" class="z-10 flex flex-wrap justify-center gap-1 w-full min-h-[50px] items-center"></div>
+                </div>
+ 
+                <!-- Habitat Darat -->
+                <div id="zone-darat" data-habitat="darat" 
+                     class="drop-zone border-4 border-emerald-400 rounded-3xl p-2.5 flex flex-col items-center justify-between shadow-inner relative overflow-hidden"
+                     style="background-image: linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.2)), url('https://i.ibb.co.com/gM3pP75c/bg-hutan.jpg');">
+                    <div class="z-10 text-center bg-white/80 backdrop-blur-sm px-2 py-1 rounded-xl">
+                        <span class="text-2xl md:text-4xl block">🌳</span>
+                        <span class="text-xs md:text-sm font-bold text-emerald-900">DARAT (0/5)</span>
+                    </div>
+                    <div id="slot-darat" class="z-10 flex flex-wrap justify-center gap-1 w-full min-h-[50px] items-center"></div>
+                </div>
+ 
+                <!-- Habitat Air -->
+                <div id="zone-air" data-habitat="air" 
+                     class="drop-zone border-4 border-cyan-400 rounded-3xl p-2.5 flex flex-col items-center justify-between shadow-inner relative overflow-hidden"
+                     style="background-image: linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.2)), url('https://i.ibb.co.com/zTdg8Ljn/bg-laut.jpg');">
+                    <div class="z-10 text-center bg-white/80 backdrop-blur-sm px-2 py-1 rounded-xl">
+                        <span class="text-2xl md:text-4xl block">🌊</span>
+                        <span class="text-xs md:text-sm font-bold text-cyan-900">AIR (0/5)</span>
+                    </div>
+                    <div id="slot-air" class="z-10 flex flex-wrap justify-center gap-1 w-full min-h-[50px] items-center"></div>
+                </div>
+ 
+            </div>
+ 
+            <!-- Spawn Area (Kartu Hewan yang Muncul) -->
+            <div class="mt-3 bg-amber-50/95 border-4 border-amber-300 rounded-3xl p-3 min-h-[160px] flex flex-col items-center justify-center shadow-lg relative">
+                <span class="text-xs text-amber-800 font-bold uppercase tracking-wider mb-1">🐾 Hewan yang Tersesat di Hutan:</span>
+                
+                <div id="spawn-area" class="flex items-center justify-center min-h-[95px] w-full">
+                    <!-- Dynamic Animal Card -->
+                </div>
+ 
+                <div id="feedback-msg" class="text-center font-bold text-sm md:text-lg mt-1 h-6 transition-all duration-300"></div>
+            </div>
+        </main>
+ 
+        <!-- Footer Permainan -->
+        <footer class="text-center text-xs text-amber-900 font-medium pb-1">
+            Gim Edukasi Klasifikasi Habitat Hewan • TK A
+        </footer>
+    </div>
+ 
+    <!-- Modal Kemenangan -->
+    <div id="win-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-3xl p-6 md:p-8 max-w-sm w-11/12 text-center shadow-2xl border-4 border-amber-400">
+            <div class="text-6xl mb-3">🎉🏆🎉</div>
+            <h2 class="text-2xl md:text-3xl font-bold text-amber-700 mb-2">LUAAR BIASA!</h2>
+            <p class="text-gray-600 text-sm md:text-base mb-6">Kamu berhasil memulangkan semua <b>15 hewan</b> ke habitatnya dengan tepat!</p>
+            <button id="restart-btn" class="w-full py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-lg md:text-xl rounded-2xl shadow-lg border-b-4 border-emerald-700 active:scale-95 transition">
+                🚀 Main Lagi
+            </button>
+        </div>
+    </div>
+ 
+    <!-- JavaScript Logic with AI Voice Over (Web Speech API) -->
+    <script>
+        const animalsData = [
+            // Udara (5)
+            { id: 'u1', name: 'Burung Elang', img: 'https://i.ibb.co.com/1wCSK7q/emoji-burung-elang.jpg', habitat: 'udara' },
+            { id: 'u2', name: 'Kupu-kupu', img: 'https://i.ibb.co.com/RGygX7LL/emoji-kupu.jpg', habitat: 'udara' },
+            { id: 'u3', name: 'Lebah', img: 'https://i.ibb.co.com/qYmXDcDv/emoji-lebah.jpg', habitat: 'udara' },
+            { id: 'u4', name: 'Burung Hantu', img: 'https://i.ibb.co.com/R4ZMVjzg/emoji-burung-hantu.jpg', habitat: 'udara' },
+            { id: 'u5', name: 'Kelelawar', img: 'https://i.ibb.co.com/m54scbVg/emoji-kelelawar.jpg', habitat: 'udara' },
+            
+            // Darat (5)
+            { id: 'd1', name: 'Gajah', img: 'https://i.ibb.co.com/HpXzkYjb/emoji-gajah.jpg', habitat: 'darat' },
+            { id: 'd2', name: 'Singa', img: 'https://i.ibb.co.com/9HYLg46g/emoji-singa.jpg', habitat: 'darat' },
+            { id: 'd3', name: 'Jerapah', img: 'https://i.ibb.co.com/dwn71NdP/emoji-jerapah.jpg', habitat: 'darat' },
+            { id: 'd4', name: 'Kelinci', img: 'https://i.ibb.co.com/yFvzD8Mc/emoji-kelinci.jpg', habitat: 'darat' },
+            { id: 'd5', name: 'Kanguru', img: 'https://i.ibb.co.com/35NhPYR6/emoji-kanguru.jpg', habitat: 'darat' },
+ 
+            // Air (5)
+            { id: 'a1', name: 'Ikan Mas', img: 'https://i.ibb.co.com/gFhp8VbH/emoji-ikan-mas.jpg', habitat: 'air' },
+            { id: 'a2', name: 'Gurita', img: 'https://i.ibb.co.com/rfq5jg67/emoji-gurita.jpg', habitat: 'air' },
+            { id: 'a3', name: 'Lumba-lumba', img: 'https://i.ibb.co.com/pvh26hPs/emoji-lumba-lumba.jpg', habitat: 'air' },
+            { id: 'a4', name: 'Hiu', img: 'https://i.ibb.co.com/0jNtn90c/emoji-hiu.jpg', habitat: 'air' },
+            { id: 'a5', name: 'Kepiting', img: 'https://i.ibb.co.com/YT1whMFn/emoji-kepiting.jpg', habitat: 'air' },
+        ];
+ 
+        let remainingAnimals = [];
+        let currentAnimal = null;
+        let score = 0;
+        let habitatCounts = { udara: 0, darat: 0, air: 0 };
+        const totalScore = animalsData.length;
+        let voiceEnabled = true;
+
+        // Web Speech API Voice Over Helper
+        function speak(text, pitch = 1.2, rate = 0.95) {
+            if (!voiceEnabled || !('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel(); // Stop any ongoing speech
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'id-ID';
+            utterance.pitch = pitch; // Slightly higher pitch for child-friendly tone
+            utterance.rate = rate;   // Slightly slower tempo for TK A clarity
+            
+            // Try to pick an Indonesian voice if available
+            const voices = window.speechSynthesis.getVoices();
+            const idVoice = voices.find(v => v.lang.includes('id') || v.lang.includes('ID'));
+            if (idVoice) {
+                utterance.voice = idVoice;
+            }
+            window.speechSynthesis.speak(utterance);
+        }
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+ 
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+ 
+            if (type === 'correct') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1046.50, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'wrong') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(110, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'win') {
+                const now = audioCtx.currentTime;
+                [261.63, 329.63, 392.00, 523.25, 659.25].forEach((freq, idx) => {
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.connect(g);
+                    g.connect(audioCtx.destination);
+                    o.frequency.value = freq;
+                    g.gain.setValueAtTime(0.2, now + idx * 0.1);
+                    g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 0.4);
+                    o.start(now + idx * 0.1);
+                    o.stop(now + idx * 0.1 + 0.4);
+                });
+            }
+        }
+ 
+        const loadingScreen = document.getElementById('loading-screen');
+        const homeScreen = document.getElementById('home-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const loadingBar = document.getElementById('loading-bar');
+        const startGameBtn = document.getElementById('start-game-btn');
+        const backHomeBtn = document.getElementById('back-home-btn');
+        const spawnArea = document.getElementById('spawn-area');
+        const scoreText = document.getElementById('scoreText');
+        const feedbackMsg = document.getElementById('feedback-msg');
+        const winModal = document.getElementById('win-modal');
+        const resetBtn = document.getElementById('reset-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const toggleVoiceBtn = document.getElementById('toggle-voice-btn');
+
+        toggleVoiceBtn.addEventListener('click', () => {
+            voiceEnabled = !voiceEnabled;
+            if (voiceEnabled) {
+                toggleVoiceBtn.textContent = '🔊';
+                toggleVoiceBtn.className = 'w-7 h-7 flex items-center justify-center bg-emerald-500 text-white rounded-full text-xs shadow hover:bg-emerald-600 transition';
+                speak("Suara AI diaktifkan!");
+            } else {
+                window.speechSynthesis.cancel();
+                toggleVoiceBtn.textContent = '🔇';
+                toggleVoiceBtn.className = 'w-7 h-7 flex items-center justify-center bg-gray-400 text-white rounded-full text-xs shadow hover:bg-gray-500 transition';
+            }
+        });
+ 
+        window.addEventListener('load', () => {
+            // Speak loading narration
+            speak("Halo anak-anak hebat! Sebentar ya, kita siapkan dulu petualangan serunya...");
+
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 25;
+                loadingBar.style.width = `${progress}%`;
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        loadingScreen.classList.add('hidden');
+                        homeScreen.classList.remove('hidden');
+                        // Speak home greeting narration
+                        speak("Halo, Penjelajah Cilik! Wah, ada 15 hewan lucu yang tersesat di hutan. Bisakah kamu membantu mereka menemukan jalan pulang ke Darat, Air, atau Udara? Yuk, klik tombol Mulai Bermain!");
+                    }, 400);
+                }
+            }, 200);
+        });
+ 
+        startGameBtn.addEventListener('click', () => {
+            homeScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+            initGame();
+        });
+ 
+        backHomeBtn.addEventListener('click', () => {
+            gameScreen.classList.add('hidden');
+            homeScreen.classList.remove('hidden');
+            speak("Halo, Penjelajah Cilik! Pilih tombol Mulai Bermain untuk kembali berpetualang.");
+        });
+ 
+        function initGame() {
+            score = 0;
+            habitatCounts = { udara: 0, darat: 0, air: 0 };
+            remainingAnimals = [...animalsData].sort(() => Math.random() - 0.5);
+            updateScoreDisplay();
+            clearDropZones();
+            winModal.classList.add('hidden');
+            showNextAnimal();
+        }
+ 
+        function updateScoreDisplay() {
+            scoreText.textContent = `${score} / ${totalScore}`;
+            document.querySelector('#zone-udara span.font-bold').textContent = `UDARA (${habitatCounts.udara}/5)`;
+            document.querySelector('#zone-darat span.font-bold').textContent = `DARAT (${habitatCounts.darat}/5)`;
+            document.querySelector('#zone-air span.font-bold').textContent = `AIR (${habitatCounts.air}/5)`;
+        }
+ 
+        function clearDropZones() {
+            document.getElementById('slot-udara').innerHTML = '';
+            document.getElementById('slot-darat').innerHTML = '';
+            document.getElementById('slot-air').innerHTML = '';
+        }
+ 
+        function showNextAnimal() {
+            spawnArea.innerHTML = '';
+            feedbackMsg.textContent = '';
+            feedbackMsg.className = 'text-center font-bold text-sm md:text-lg mt-1 h-6 transition-all duration-300';
+ 
+            if (remainingAnimals.length === 0) {
+                setTimeout(() => {
+                    playSound('win');
+                    winModal.classList.remove('hidden');
+                    speak("Luar biasa! Hebat banget! Semua hewan sudah pulang ke rumah mereka dengan selamat. Kamu memang penjelajah cilik yang paling cerdas!");
+                    if (typeof confetti === 'function') {
+                        confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
+                    }
+                }, 400);
+                return;
+            }
+ 
+            currentAnimal = remainingAnimals.pop();
+
+            // Dynamic AI Voice Over for spawned animal
+            speak(`Lihat! Ada ${currentAnimal.name}. Kira-kira, ${currentAnimal.name} tinggal di mana ya? Tarik ke kotaknya, yuk!`);
+ 
+            const card = document.createElement('div');
+            card.className = 'draggable-item flex flex-col items-center justify-center bg-white border-4 border-amber-400 p-2 rounded-2xl shadow-md cursor-grab select-none transform transition hover:scale-105 active:scale-110';
+            card.setAttribute('draggable', 'true');
+            card.id = `animal-${currentAnimal.id}`;
+ 
+            card.innerHTML = `
+                <img src="${currentAnimal.img}" alt="${currentAnimal.name}" class="w-16 h-16 md:w-20 md:h-20 object-cover rounded-xl pointer-events-none mb-1" onerror="this.src='https://placehold.co/80x80/ffffff/374151?text=Hewan'">
+                <span class="text-xs md:text-sm font-bold text-gray-800 pointer-events-none">${currentAnimal.name}</span>
+            `;
+ 
+            setupDragAndDrop(card);
+            spawnArea.appendChild(card);
+        }
+ 
+        function setupDragAndDrop(el) {
+            el.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', currentAnimal.habitat);
+                el.classList.add('opacity-40');
+            });
+ 
+            el.addEventListener('dragend', () => {
+                el.classList.remove('opacity-40');
+            });
+ 
+            let touchStartX = 0, touchStartY = 0;
+            let initialX = 0, initialY = 0;
+            let isDragging = false;
+ 
+            el.addEventListener('touchstart', (e) => {
+                const touch = e.touches[0];
+                touchStartX = touch.clientX;
+                touchStartY = touch.clientY;
+                const rect = el.getBoundingClientRect();
+                initialX = rect.left;
+                initialY = rect.top;
+ 
+                el.style.position = 'fixed';
+                el.style.left = `${initialX}px`;
+                el.style.top = `${initialY}px`;
+                el.style.width = `${rect.width}px`;
+                el.style.zIndex = '1000';
+                el.classList.add('dragging');
+                isDragging = true;
+            }, { passive: false });
+ 
+            el.addEventListener('touchmove', (e) => {
+                if (!isDragging) return;
+                e.preventDefault();
+                const touch = e.touches[0];
+                const dx = touch.clientX - touchStartX;
+                const dy = touch.clientY - touchStartY;
+ 
+                el.style.left = `${initialX + dx}px`;
+                el.style.top = `${initialY + dy}px`;
+ 
+                highlightZoneUnderTouch(touch.clientX, touch.clientY);
+            }, { passive: false });
+ 
+            el.addEventListener('touchend', (e) => {
+                if (!isDragging) return;
+                isDragging = false;
+                el.classList.remove('dragging');
+ 
+                const touch = e.changedTouches[0];
+                const targetZone = getZoneUnderTouch(touch.clientX, touch.clientY);
+ 
+                el.style.position = '';
+                el.style.left = '';
+                el.style.top = '';
+                el.style.width = '';
+                el.style.zIndex = '';
+ 
+                removeZoneHighlights();
+ 
+                if (targetZone) {
+                    const targetHabitat = targetZone.getAttribute('data-habitat');
+                    checkAnswer(targetHabitat, el);
+                } else {
+                    spawnArea.appendChild(el);
+                }
+            });
+        }
+ 
+        const zones = document.querySelectorAll('.drop-zone');
+        zones.forEach(zone => {
+            zone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                zone.classList.add('highlight');
+            });
+ 
+            zone.addEventListener('dragleave', () => {
+                zone.classList.remove('highlight');
+            });
+ 
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                zone.classList.remove('highlight');
+                const targetHabitat = zone.getAttribute('data-habitat');
+                const draggedElement = document.getElementById(`animal-${currentAnimal.id}`);
+                checkAnswer(targetHabitat, draggedElement);
+            });
+        });
+ 
+        function checkAnswer(chosenHabitat, element) {
+            if (chosenHabitat === currentAnimal.habitat) {
+                playSound('correct');
+                score++;
+                habitatCounts[chosenHabitat]++;
+                updateScoreDisplay();
+ 
+                feedbackMsg.textContent = `Pintar! ${currentAnimal.name} tinggal di ${chosenHabitat.toUpperCase()}! 👏`;
+                feedbackMsg.className = 'text-center font-bold text-sm md:text-lg mt-1 text-emerald-600 animate-bounce';
+                
+                // Voice Over for correct answer
+                speak(`Pintar sekali! ${currentAnimal.name} tinggal di ${chosenHabitat}! Horeee!`);
+ 
+                const slot = document.getElementById(`slot-${chosenHabitat}`);
+                const miniBadge = document.createElement('div');
+                miniBadge.className = 'bg-white p-1 rounded-lg shadow border border-gray-200 animate-correct';
+                miniBadge.innerHTML = `<img src="${currentAnimal.img}" class="w-8 h-8 md:w-10 md:h-10 object-cover rounded-md" onerror="this.src='https://placehold.co/40x40/ffffff/374151?text=ok'">`;
+                slot.appendChild(miniBadge);
+ 
+                setTimeout(() => {
+                    showNextAnimal();
+                }, 1200);
+ 
+            } else {
+                playSound('wrong');
+                feedbackMsg.textContent = `Yuk coba lagi! ${currentAnimal.name} bukan tinggal di situ.`;
+                feedbackMsg.className = 'text-center font-bold text-sm md:text-lg mt-1 text-rose-500';
+
+                // Voice Over for wrong answer
+                speak(`Eitss, coba dipikirkan lagi ya. ${currentAnimal.name} bukan tinggal di situ, yuk cari rumah yang pas!`);
+ 
+                element.classList.add('animate-shake');
+                setTimeout(() => {
+                    element.classList.remove('animate-shake');
+                }, 500);
+            }
+        }
+ 
+        function getZoneUnderTouch(x, y) {
+            const elements = document.elementsFromPoint(x, y);
+            for (let el of elements) {
+                if (el.classList.contains('drop-zone')) {
+                    return el;
+                }
+            }
+            return null;
+        }
+ 
+        function highlightZoneUnderTouch(x, y) {
+            removeZoneHighlights();
+            const zone = getZoneUnderTouch(x, y);
+            if (zone) {
+                zone.classList.add('highlight');
+            }
+        }
+ 
+        function removeZoneHighlights() {
+            zones.forEach(z => z.classList.remove('highlight'));
+        }
+ 
+        resetBtn.addEventListener('click', initGame);
+        restartBtn.addEventListener('click', initGame);
+    </script>
+</body>
+</html>
